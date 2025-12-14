@@ -91,7 +91,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     var debug: TerminalDebugView?
     var pendingDisplay: Bool = false
     
-    var cellDimension: CellDimension!
+    public var cellDimension: CellDimension!
     var caretView: CaretView!
     public var terminal: Terminal!
 
@@ -935,7 +935,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
     }
     
-    public override func mouseDown(with event: NSEvent) {
+    open override func mouseDown(with event: NSEvent) {
         if allowMouseReporting && terminal.mouseMode.sendButtonPress() {
             sharedMouseEvent(with: event)
             return
@@ -972,7 +972,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     
     var didSelectionDrag: Bool = false
     
-    public override func mouseUp(with event: NSEvent) {
+    open override func mouseUp(with event: NSEvent) {
         if event.modifierFlags.contains(.command){
             if let payload = getPayload(for: event) as? String {
                 if let (url, params) = urlAndParamsFrom(payload: payload) {
@@ -993,7 +993,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         didSelectionDrag = false
     }
     
-    public override func mouseDragged(with event: NSEvent) {
+    open override func mouseDragged(with event: NSEvent) {
         let mouseHit = calculateMouseHit(with: event)
         let hit = mouseHit.grid
         if allowMouseReporting {
@@ -1090,7 +1090,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
     }
     
-    public override func mouseMoved(with event: NSEvent) {
+    open override func mouseMoved(with event: NSEvent) {
         let hit = calculateMouseHit(with: event)
         if commandActive {
             if let payload = getPayload(for: event) as? String {
@@ -1104,7 +1104,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         }
     }
     
-    public override func scrollWheel(with event: NSEvent) {
+    open override func scrollWheel(with event: NSEvent) {
         if event.deltaY == 0 {
             return
         }
