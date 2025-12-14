@@ -307,6 +307,15 @@ public class EscapeSequenceParser {
     
     var activeDcsHandler: DcsHandler? = nil
     var errorHandler: (ParsingState) -> ParsingState = { (state : ParsingState) -> ParsingState in return state; }
+
+    /// Represents a pending OSC callback to be invoked after parsing completes
+    struct PendingOSC {
+        let code: Int
+        let content: ArraySlice<UInt8>
+    }
+
+    /// Queue of pending OSC callbacks to invoke after parsing is complete
+    var pendingOSCCallbacks: [PendingOSC] = []
     
     var initialState: ParserState = .ground
     var currentState: ParserState = .ground
@@ -370,7 +379,22 @@ public class EscapeSequenceParser {
         _pars = [0]
         _collect = []
         activeDcsHandler = nil
+        pendingOSCCallbacks.removeAll()
         printStateReset()
+    }
+
+    /// Flushes all pending OSC callbacks that were queued during parsing.
+    /// This should be called after `parse()` completes to ensure OSC handlers
+    /// see accurate cursor positions.
+    public func flushPendingOSC() {
+        for pending in pendingOSCCallbacks {
+            if let handler = oscHandlers[pending.code] {
+                handler(pending.content)
+            } else {
+                oscHandlerFallback(pending.code, pending.content)
+            }
+        }
+        pendingOSCCallbacks.removeAll()
     }
 
     var logFileCounter = 1
@@ -589,7 +613,7 @@ public class EscapeSequenceParser {
                     var oscCode : Int
                     var content : ArraySlice<UInt8>
                     let semiColonAscii = 59 // ';'
-                    
+
                     if let idx = osc.firstIndex (of: UInt8(semiColonAscii)){
                         oscCode = EscapeSequenceParser.parseInt (osc [0..<idx])
                         content = osc [(idx+1)...]
@@ -597,11 +621,9 @@ public class EscapeSequenceParser {
                         oscCode = EscapeSequenceParser.parseInt (osc[0...])
                         content = []
                     }
-                    if let handler = oscHandlers [oscCode] {
-                        handler (content)
-                    } else {
-                        oscHandlerFallback (oscCode, content)
-                    }
+                    // Queue the OSC callback to be invoked after parsing completes
+                    // This ensures handlers see accurate cursor positions
+                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content))
                 }
                 if code == 0x1b {
                     transition |= ParserState.escape.rawValue

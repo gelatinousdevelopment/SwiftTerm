@@ -4483,6 +4483,7 @@ open class Terminal {
     public func parse (buffer: ArraySlice<UInt8>)
     {
         parser.parse(data: buffer)
+        parser.flushPendingOSC()
     }
      
     /**
