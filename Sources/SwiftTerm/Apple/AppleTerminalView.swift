@@ -327,7 +327,10 @@ extension TerminalView {
             tf = fontSet.normal
         }
         
-        let resolvedFgColor = flags.contains(.dim) ? fg.withAlphaComponent(0.6) : fg
+        var resolvedFgColor = flags.contains(.dim) ? fg.withAlphaComponent(0.6) : fg
+        if flags.contains(.invisible) {
+            resolvedFgColor = bg
+        }
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
             .foregroundColor: resolvedFgColor,
@@ -340,7 +343,7 @@ extension TerminalView {
             nsattr [.underlineColor] = underlineColor
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
-        if flags.contains (.crossedOut) {
+        if flags.contains (.crossedOut) && !flags.contains(.invisible) {
             nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
@@ -391,13 +394,18 @@ extension TerminalView {
             tf = fontSet.normal
         }
         
+        let bgColor = mapColor(color: bg, isFg: false, isBold: false)
         let fgColor = mapColor (color: fg, isFg: true, isBold: isBold, useBrightColors: useBrightColors)
-        let resolvedFgColor = flags.contains(.dim) ? fgColor.withAlphaComponent(0.6) : fgColor
+        var resolvedFgColor = flags.contains(.dim) ? fgColor.withAlphaComponent(0.6) : fgColor
+        if flags.contains(.invisible) {
+            resolvedFgColor = bgColor
+        }
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
             .foregroundColor: resolvedFgColor,
-            .backgroundColor: mapColor(color: bg, isFg: false, isBold: false)
+            .backgroundColor: bgColor
         ]
+<<<<<<< HEAD
         if flags.contains (.underline) {
 <<<<<<< HEAD
             let underlineColor = attribute.underlineColor.map {
@@ -405,11 +413,14 @@ extension TerminalView {
             } ?? fgColor
             nsattr [.underlineColor] = underlineColor
 =======
+=======
+        if flags.contains (.underline) && !flags.contains(.invisible) {
+>>>>>>> b9380d9 (Render invisible characters as invisible)
             nsattr [.underlineColor] = resolvedFgColor
 >>>>>>> 69ea035 (Render dim character at lower opacity)
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
-        if flags.contains (.crossedOut) {
+        if flags.contains (.crossedOut) && !flags.contains(.invisible) {
             nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
