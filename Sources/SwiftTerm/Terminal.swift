@@ -1664,21 +1664,37 @@ open class Terminal {
     }
     
     // OSC 4
+    func oscReplyTerminator () -> [UInt8] {
+        let terminator = parser.oscTerminator
+        return terminator.isEmpty ? cc.ST : terminator
+    }
+    
     func oscChangeOrQueryColorIndex (_ data: ArraySlice<UInt8>)
     {
+        let terminator = oscReplyTerminator()
         var parsePos = data.startIndex
         while parsePos <= data.endIndex {
             guard let p = data [parsePos...].firstIndex(of: UInt8 (ascii: ";")) else {
                 return
             }
-            let color = EscapeSequenceParser.parseInt(data [parsePos..<p])
-            guard color < 256 else {
-                return
-            }
+            let color = Int(String(bytes: data [parsePos..<p], encoding: .ascii) ?? "") ?? 0
         
             // If the request is a query, reply with the current color definition
             if p+1 < data.endIndex && data [p+1] == UInt8 (ascii: "?") {
-                sendResponse (cc.OSC, "4;\(color);\(ansiColors [color].formatAsXcolor())", cc.ST)
+                let reportedColor: Color?
+                switch color {
+                case -1:
+                    reportedColor = foregroundColor
+                case -2:
+                    reportedColor = backgroundColor
+                case let idx where idx >= 0 && idx < ansiColors.count:
+                    reportedColor = ansiColors [idx]
+                default:
+                    reportedColor = nil
+                }
+                if let reportedColor {
+                    sendResponse (cc.OSC, "4;\(color);\(reportedColor.formatAsXcolor())", terminator)
+                }
                 parsePos = p+2
                 if parsePos < data.endIndex && data [parsePos] == UInt8(ascii: ";"){
                     parsePos += 1
@@ -1693,7 +1709,7 @@ open class Terminal {
         
             let end = data [parsePos...].firstIndex(of: UInt8(ascii: ";")) ?? data.endIndex
             
-            if let newColor = Color.parseColor (data [parsePos..<end]) {
+            if color >= 0, color < ansiColors.count, let newColor = Color.parseColor (data [parsePos..<end]) {
                 ansiColors [color] = newColor
                 tdel?.colorChanged (source: self, idx: color)
             }
@@ -1704,7 +1720,7 @@ open class Terminal {
     }
     
     func reportColor (oscCode: Int, color: Color) {
-        sendResponse(cc.OSC, "\(oscCode);\(color.formatAsXcolor ())", cc.ST)
+        sendResponse(cc.OSC, "\(oscCode);\(color.formatAsXcolor ())", oscReplyTerminator())
     }
     
     // This handles both setting the foreground, but spill into background and cursor color

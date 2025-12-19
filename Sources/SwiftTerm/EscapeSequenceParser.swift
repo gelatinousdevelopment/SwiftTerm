@@ -326,10 +326,14 @@ public class EscapeSequenceParser {
     struct PendingOSC {
         let code: Int
         let content: ArraySlice<UInt8>
+        let terminator: [UInt8]
     }
 
     /// Queue of pending OSC callbacks to invoke after parsing is complete
     var pendingOSCCallbacks: [PendingOSC] = []
+    
+    /// Tracks the terminator (BEL vs ST) used by the last OSC sequence, so handlers can reply in-kind.
+    public internal(set) var oscTerminator: [UInt8] = []
     
     var initialState: ParserState = .ground
     var currentState: ParserState = .ground
@@ -354,6 +358,19 @@ public class EscapeSequenceParser {
         _pars = [0]
         _parsTxt = []
         _collect = []
+<<<<<<< HEAD
+=======
+        // "\"
+        setEscHandler("\\", { collect, flag in })
+    }
+    
+    var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
+    }
+    
+    func setEscHandler (_ flag: String, _ callback: @escaping EscHandler)
+    {
+        escHandlers [Array (flag.utf8)] = callback
+>>>>>>> 21867fd (Render alternate background color, such as with codex prompt box)
     }
 
     // MARK: - Dispatch Methods
@@ -598,6 +615,7 @@ public class EscapeSequenceParser {
     /// see accurate cursor positions.
     public func flushPendingOSC() {
         for pending in pendingOSCCallbacks {
+            oscTerminator = pending.terminator
             if let handler = oscHandlers[pending.code] {
                 handler(pending.content)
             } else {
@@ -605,6 +623,7 @@ public class EscapeSequenceParser {
             }
         }
         pendingOSCCallbacks.removeAll()
+        oscTerminator = []
     }
 
     var logFileCounter = 1
@@ -852,10 +871,25 @@ public class EscapeSequenceParser {
                         oscCode = EscapeSequenceParser.parseInt (osc[0...])
                         content = []
                     }
+                    let terminator: [UInt8]
+                    switch code {
+                    case ControlCodes.BEL:
+                        terminator = [ControlCodes.BEL]
+                    case 0x9c:
+                        terminator = [0x9c]
+                    case ControlCodes.ESC:
+                        terminator = [ControlCodes.ESC, UInt8(ascii: "\\")]
+                    default:
+                        terminator = [0x1b, UInt8(ascii: "\\")]
+                    }
                     // Queue the OSC callback to be invoked after parsing completes
                     // This ensures handlers see accurate cursor positions
+<<<<<<< HEAD
                     pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content))
 >>>>>>> a3a4992 (Improving OSC integration)
+=======
+                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content, terminator: terminator))
+>>>>>>> 21867fd (Render alternate background color, such as with codex prompt box)
                 }
                 if code == 0x1b {
                     transition |= ParserState.escape.rawValue
