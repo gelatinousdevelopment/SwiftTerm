@@ -322,19 +322,6 @@ public class EscapeSequenceParser {
     // Reference to the terminal for direct dispatch
     unowned var terminal: Terminal?
 
-    /// Represents a pending OSC callback to be invoked after parsing completes
-    struct PendingOSC {
-        let code: Int
-        let content: ArraySlice<UInt8>
-        let terminator: [UInt8]
-    }
-
-    /// Queue of pending OSC callbacks to invoke after parsing is complete
-    var pendingOSCCallbacks: [PendingOSC] = []
-    
-    /// Tracks the terminator (BEL vs ST) used by the last OSC sequence, so handlers can reply in-kind.
-    public internal(set) var oscTerminator: [UInt8] = []
-    
     var initialState: ParserState = .ground
     var currentState: ParserState = .ground
     
@@ -358,12 +345,8 @@ public class EscapeSequenceParser {
         _pars = [0]
         _parsTxt = []
         _collect = []
-        // "\"
     }
-    
-    var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
-    }
-    
+
     // MARK: - Dispatch Methods
 
     func dispatchExecute(code: UInt8) {
@@ -570,6 +553,9 @@ public class EscapeSequenceParser {
         return nil
     }
 
+    var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
+    }
+
     var dscHandlerFallback: DscHandlerFallback = { code, pars in }
     
     var executeHandlerFallback : ExecuteHandler = { () -> () in
@@ -594,20 +580,7 @@ public class EscapeSequenceParser {
         _pars = [0]
         _collect = []
         activeDcsHandler = nil
-        pendingOSCCallbacks.removeAll()
         printStateReset()
-    }
-
-    /// Flushes all pending OSC callbacks that were queued during parsing.
-    /// This should be called after `parse()` completes to ensure OSC handlers
-    /// see accurate cursor positions.
-    public func flushPendingOSC() {
-        for pending in pendingOSCCallbacks {
-            oscTerminator = pending.terminator
-            dispatchOsc(code: pending.code, data: pending.content)
-        }
-        pendingOSCCallbacks.removeAll()
-        oscTerminator = []
     }
 
     var logFileCounter = 1
@@ -818,34 +791,27 @@ public class EscapeSequenceParser {
                 }
                 i = j - 1
             case .oscEnd:
-                if osc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
-                    // NOTE: OSC subparsing is not part of the original parser
-                    // we do basic identifier parsing here to offer a jump table for OSC as well
-                    var oscCode : Int
-                    var content : ArraySlice<UInt8>
-                    let semiColonAscii = 59 // ';'
+                if currentState == .apcString {
+                    if apc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
+                        let command = apc[apc.startIndex]
+                        let content = apc.count > 1 ? apc[(apc.startIndex+1)...] : ArraySlice<UInt8>()
+                        dispatchApc(command: command, content: content)
+                    }
+                } else {
+                    if osc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
+                        var oscCode: Int
+                        var content: ArraySlice<UInt8>
+                        let semiColonAscii = 59 // ';'
 
-                    if let idx = osc.firstIndex (of: UInt8(semiColonAscii)){
-                        oscCode = EscapeSequenceParser.parseInt (osc [0..<idx])
-                        content = osc [(idx+1)...]
-                    } else {
-                        oscCode = EscapeSequenceParser.parseInt (osc[0...])
-                        content = []
+                        if let idx = osc.firstIndex(of: UInt8(semiColonAscii)) {
+                            oscCode = EscapeSequenceParser.parseInt(osc[0..<idx])
+                            content = osc[(idx+1)...]
+                        } else {
+                            oscCode = EscapeSequenceParser.parseInt(osc[0...])
+                            content = []
+                        }
+                        dispatchOsc(code: oscCode, data: content)
                     }
-                    let terminator: [UInt8]
-                    switch code {
-                    case ControlCodes.BEL:
-                        terminator = [ControlCodes.BEL]
-                    case 0x9c:
-                        terminator = [0x9c]
-                    case ControlCodes.ESC:
-                        terminator = [ControlCodes.ESC, UInt8(ascii: "\\")]
-                    default:
-                        terminator = [0x1b, UInt8(ascii: "\\")]
-                    }
-                    // Queue the OSC callback to be invoked after parsing completes
-                    // This ensures handlers see accurate cursor positions
-                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content, terminator: terminator))
                 }
                 if code == 0x1b {
                     transition |= ParserState.escape.rawValue
