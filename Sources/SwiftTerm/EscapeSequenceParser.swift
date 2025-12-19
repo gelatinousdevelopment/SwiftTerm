@@ -312,10 +312,14 @@ public class EscapeSequenceParser {
     struct PendingOSC {
         let code: Int
         let content: ArraySlice<UInt8>
+        let terminator: [UInt8]
     }
 
     /// Queue of pending OSC callbacks to invoke after parsing is complete
     var pendingOSCCallbacks: [PendingOSC] = []
+    
+    /// Tracks the terminator (BEL vs ST) used by the last OSC sequence, so handlers can reply in-kind.
+    public internal(set) var oscTerminator: [UInt8] = []
     
     var initialState: ParserState = .ground
     var currentState: ParserState = .ground
@@ -338,7 +342,7 @@ public class EscapeSequenceParser {
         _parsTxt = []
         _collect = []
         // "\"
-        setEscHandler("\\", { [unowned self] collect, flag in })
+        setEscHandler("\\", { collect, flag in })
     }
     
     var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
@@ -388,6 +392,7 @@ public class EscapeSequenceParser {
     /// see accurate cursor positions.
     public func flushPendingOSC() {
         for pending in pendingOSCCallbacks {
+            oscTerminator = pending.terminator
             if let handler = oscHandlers[pending.code] {
                 handler(pending.content)
             } else {
@@ -395,6 +400,7 @@ public class EscapeSequenceParser {
             }
         }
         pendingOSCCallbacks.removeAll()
+        oscTerminator = []
     }
 
     var logFileCounter = 1
@@ -621,9 +627,20 @@ public class EscapeSequenceParser {
                         oscCode = EscapeSequenceParser.parseInt (osc[0...])
                         content = []
                     }
+                    let terminator: [UInt8]
+                    switch code {
+                    case ControlCodes.BEL:
+                        terminator = [ControlCodes.BEL]
+                    case 0x9c:
+                        terminator = [0x9c]
+                    case ControlCodes.ESC:
+                        terminator = [ControlCodes.ESC, UInt8(ascii: "\\")]
+                    default:
+                        terminator = [0x1b, UInt8(ascii: "\\")]
+                    }
                     // Queue the OSC callback to be invoked after parsing completes
                     // This ensures handlers see accurate cursor positions
-                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content))
+                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content, terminator: terminator))
                 }
                 if code == 0x1b {
                     transition |= ParserState.escape.rawValue
