@@ -303,17 +303,18 @@ extension TerminalView {
             tf = fontSet.normal
         }
         
+        let resolvedFgColor = flags.contains(.dim) ? fg.withAlphaComponent(0.6) : fg
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
-            .foregroundColor: fg,
+            .foregroundColor: resolvedFgColor,
             .backgroundColor: bg
         ]
         if flags.contains (.underline) {
-            nsattr [.underlineColor] = fg
+            nsattr [.underlineColor] = resolvedFgColor
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
         if flags.contains (.crossedOut) {
-            nsattr [.strikethroughColor] = fg
+            nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
         return nsattr
@@ -364,17 +365,18 @@ extension TerminalView {
         }
         
         let fgColor = mapColor (color: fg, isFg: true, isBold: isBold, useBrightColors: useBrightColors)
+        let resolvedFgColor = flags.contains(.dim) ? fgColor.withAlphaComponent(0.6) : fgColor
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
-            .foregroundColor: fgColor,
+            .foregroundColor: resolvedFgColor,
             .backgroundColor: mapColor(color: bg, isFg: false, isBold: false)
         ]
         if flags.contains (.underline) {
-            nsattr [.underlineColor] = fgColor
+            nsattr [.underlineColor] = resolvedFgColor
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
         if flags.contains (.crossedOut) {
-            nsattr [.strikethroughColor] = fgColor
+            nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
 
