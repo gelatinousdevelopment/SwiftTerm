@@ -327,9 +327,10 @@ extension TerminalView {
             tf = fontSet.normal
         }
         
+        let resolvedFgColor = flags.contains(.dim) ? fg.withAlphaComponent(0.6) : fg
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
-            .foregroundColor: fg,
+            .foregroundColor: resolvedFgColor,
             .backgroundColor: bg
         ]
         if flags.contains (.underline) {
@@ -340,7 +341,7 @@ extension TerminalView {
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
         if flags.contains (.crossedOut) {
-            nsattr [.strikethroughColor] = fg
+            nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
         return nsattr
@@ -391,20 +392,25 @@ extension TerminalView {
         }
         
         let fgColor = mapColor (color: fg, isFg: true, isBold: isBold, useBrightColors: useBrightColors)
+        let resolvedFgColor = flags.contains(.dim) ? fgColor.withAlphaComponent(0.6) : fgColor
         var nsattr: [NSAttributedString.Key:Any] = [
             .font: tf,
-            .foregroundColor: fgColor,
+            .foregroundColor: resolvedFgColor,
             .backgroundColor: mapColor(color: bg, isFg: false, isBold: false)
         ]
         if flags.contains (.underline) {
+<<<<<<< HEAD
             let underlineColor = attribute.underlineColor.map {
                 mapColor(color: $0, isFg: true, isBold: isBold, useBrightColors: useBrightColors)
             } ?? fgColor
             nsattr [.underlineColor] = underlineColor
+=======
+            nsattr [.underlineColor] = resolvedFgColor
+>>>>>>> 69ea035 (Render dim character at lower opacity)
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
         if flags.contains (.crossedOut) {
-            nsattr [.strikethroughColor] = fgColor
+            nsattr [.strikethroughColor] = resolvedFgColor
             nsattr [.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         }
 
