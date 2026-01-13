@@ -68,6 +68,14 @@ public class LocalProcess {
     
     /* The PID of our subprocess */
     public private(set) var shellPid: pid_t = 0
+
+    /// The process group ID (PGID) of the shell process.
+    /// Used for matching child processes to their parent session for sandbox denial routing.
+    public var shellPGID: pid_t {
+        guard shellPid > 0 else { return -1 }
+        return getpgid(shellPid)
+    }
+
     var debugIO = false
     
     /* number of sent requests */
@@ -306,7 +314,12 @@ public class LocalProcess {
                         input: .fileDescriptor(slaveFileDescriptor, closeAfterSpawningProcess: true),
                         output: .fileDescriptor(slaveFileDescriptor, closeAfterSpawningProcess: false),
                         error: .fileDescriptor(slaveFileDescriptor, closeAfterSpawningProcess: false)
-                    )
+                    ) { execution in
+                        // Capture PID immediately after subprocess starts
+                        await MainActor.run {
+                            self.shellPid = execution.processIdentifier.value
+                        }
+                    }
                     
                     // Process completed
                     await MainActor.run {
