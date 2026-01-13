@@ -405,19 +405,11 @@ extension TerminalView {
             .foregroundColor: resolvedFgColor,
             .backgroundColor: bgColor
         ]
-<<<<<<< HEAD
         if flags.contains (.underline) {
-<<<<<<< HEAD
             let underlineColor = attribute.underlineColor.map {
                 mapColor(color: $0, isFg: true, isBold: isBold, useBrightColors: useBrightColors)
             } ?? fgColor
             nsattr [.underlineColor] = underlineColor
-=======
-=======
-        if flags.contains (.underline) && !flags.contains(.invisible) {
->>>>>>> b9380d9 (Render invisible characters as invisible)
-            nsattr [.underlineColor] = resolvedFgColor
->>>>>>> 69ea035 (Render dim character at lower opacity)
             nsattr [.underlineStyle] = NSUnderlineStyle.single.rawValue
         }
         if flags.contains (.crossedOut) && !flags.contains(.invisible) {

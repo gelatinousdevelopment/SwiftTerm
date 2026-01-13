@@ -358,8 +358,6 @@ public class EscapeSequenceParser {
         _pars = [0]
         _parsTxt = []
         _collect = []
-<<<<<<< HEAD
-=======
         // "\"
         setEscHandler("\\", { collect, flag in })
     }
@@ -370,7 +368,6 @@ public class EscapeSequenceParser {
     func setEscHandler (_ flag: String, _ callback: @escaping EscHandler)
     {
         escHandlers [Array (flag.utf8)] = callback
->>>>>>> 21867fd (Render alternate background color, such as with codex prompt box)
     }
 
     // MARK: - Dispatch Methods
@@ -834,29 +831,6 @@ public class EscapeSequenceParser {
                 }
                 i = j - 1
             case .oscEnd:
-<<<<<<< HEAD
-                if currentState == .apcString {
-                    if apc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
-                        let command = apc[apc.startIndex]
-                        let content = apc.count > 1 ? apc[(apc.startIndex+1)...] : ArraySlice<UInt8>()
-                        dispatchApc(command: command, content: content)
-                    }
-                } else {
-                    if osc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
-                        var oscCode: Int
-                        var content: ArraySlice<UInt8>
-                        let semiColonAscii = 59 // ';'
-
-                        if let idx = osc.firstIndex(of: UInt8(semiColonAscii)) {
-                            oscCode = EscapeSequenceParser.parseInt(osc[0..<idx])
-                            content = osc[(idx+1)...]
-                        } else {
-                            oscCode = EscapeSequenceParser.parseInt(osc[0...])
-                            content = []
-                        }
-                        dispatchOsc(code: oscCode, data: content)
-                    }
-=======
                 if osc.count != 0 && code != ControlCodes.CAN && code != ControlCodes.SUB {
                     // NOTE: OSC subparsing is not part of the original parser
                     // we do basic identifier parsing here to offer a jump table for OSC as well
@@ -884,12 +858,7 @@ public class EscapeSequenceParser {
                     }
                     // Queue the OSC callback to be invoked after parsing completes
                     // This ensures handlers see accurate cursor positions
-<<<<<<< HEAD
-                    pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content))
->>>>>>> a3a4992 (Improving OSC integration)
-=======
                     pendingOSCCallbacks.append(PendingOSC(code: oscCode, content: content, terminator: terminator))
->>>>>>> 21867fd (Render alternate background color, such as with codex prompt box)
                 }
                 if code == 0x1b {
                     transition |= ParserState.escape.rawValue
