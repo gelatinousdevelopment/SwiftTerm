@@ -1,0 +1,40 @@
+{
+	"configurations": [
+		{
+			"type": "lldb",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:SwiftTerm}",
+			"name": "Debug SwiftTermFuzz",
+			"program": "${workspaceFolder:SwiftTerm}/.build/debug/SwiftTermFuzz",
+			"preLaunchTask": "swift: Build Debug SwiftTermFuzz"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:SwiftTerm}",
+			"name": "Release SwiftTermFuzz",
+			"program": "${workspaceFolder:SwiftTerm}/.build/release/SwiftTermFuzz",
+			"preLaunchTask": "swift: Build Release SwiftTermFuzz"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:SwiftTerm}",
+			"name": "Debug termcast",
+			"program": "${workspaceFolder:SwiftTerm}/.build/debug/termcast",
+			"preLaunchTask": "swift: Build Debug termcast"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:SwiftTerm}",
+			"name": "Release termcast",
+			"program": "${workspaceFolder:SwiftTerm}/.build/release/termcast",
+			"preLaunchTask": "swift: Build Release termcast"
+		}
+	]
+}
