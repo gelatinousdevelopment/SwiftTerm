@@ -359,17 +359,11 @@ public class EscapeSequenceParser {
         _parsTxt = []
         _collect = []
         // "\"
-        setEscHandler("\\", { collect, flag in })
     }
     
     var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
     }
     
-    func setEscHandler (_ flag: String, _ callback: @escaping EscHandler)
-    {
-        escHandlers [Array (flag.utf8)] = callback
-    }
-
     // MARK: - Dispatch Methods
 
     func dispatchExecute(code: UInt8) {
@@ -574,9 +568,6 @@ public class EscapeSequenceParser {
             return SixelDcsHandler(terminal: terminal)
         }
         return nil
-    }
-
-    var escHandlerFallback: EscHandlerFallback = { (collect: cstring, flag: UInt8) in
     }
 
     var dscHandlerFallback: DscHandlerFallback = { code, pars in }
