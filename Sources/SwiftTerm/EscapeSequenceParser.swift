@@ -604,11 +604,7 @@ public class EscapeSequenceParser {
     public func flushPendingOSC() {
         for pending in pendingOSCCallbacks {
             oscTerminator = pending.terminator
-            if let handler = oscHandlers[pending.code] {
-                handler(pending.content)
-            } else {
-                oscHandlerFallback(pending.code, pending.content)
-            }
+            dispatchOsc(code: pending.code, data: pending.content)
         }
         pendingOSCCallbacks.removeAll()
         oscTerminator = []
